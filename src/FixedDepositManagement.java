@@ -42,7 +42,7 @@ public class FixedDepositManagement {
             String customerName = readCustomerName(scanner);
             double depositAmount = readPositiveNumber(
                     scanner,
-                    "Deposit amount / 定期存款金额 (RM): ",
+                    "Deposit amount / 定期存款金额: ",
                     false
             );
             double annualInterestRate = readPositiveNumber(
@@ -121,8 +121,8 @@ public class FixedDepositManagement {
         System.out.println("FIXED DEPOSIT REPORT / 定期存款报告");
         System.out.println("===============================================================================================");
         System.out.printf("%-6s %-18s %14s %9s %9s %14s %17s%n",
-                "ID", "Customer", "Deposit (RM)", "Rate", "Years",
-                "Interest (RM)", "Maturity (RM)");
+                "ID", "Customer", "Deposit", "Rate", "Years",
+                "Interest", "Maturity");
         System.out.println("-----------------------------------------------------------------------------------------------");
 
         double totalDeposit = 0;
