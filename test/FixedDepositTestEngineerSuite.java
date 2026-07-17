@@ -17,10 +17,12 @@ public class FixedDepositTestEngineerSuite {
     public static void main(String[] args) {
         runTest("normal case: calculates simple interest and maturity",
                 FixedDepositTestEngineerSuite::testNormalCalculation);
-        runTest("boundary case: accepts zero and maximum annual rates",
+        runTest("boundary case: accepts negative, zero and positive rates",
                 FixedDepositTestEngineerSuite::testRateBoundaries);
         runTest("invalid input: retries text, negative and excessive values",
                 FixedDepositTestEngineerSuite::testInvalidInputRecovery);
+        runTest("name validation: supports common English name formats",
+                FixedDepositTestEngineerSuite::testCustomerNameValidation);
         runTest("exception handling: rejects invalid deposit records",
                 FixedDepositTestEngineerSuite::testDomainExceptions);
         runTest("interface: supports a replacement interest policy",
@@ -51,11 +53,16 @@ public class FixedDepositTestEngineerSuite {
     }
 
     private static void testRateBoundaries() {
+        FixedDeposit minimumRate = createDeposit(
+                "T002", "Minimum Rate", "1000", "-20", "1");
         FixedDeposit zeroRate = createDeposit(
-                "T002", "Zero Rate", "1000", "0", "1");
+                "T003", "Zero Rate", "1000", "0", "1");
         FixedDeposit maximumRate = createDeposit(
-                "T003", "Maximum Rate", "1000", "20", "1");
+                "T004", "Maximum Rate", "1000", "20", "1");
 
+        assertBigDecimalEquals("-200.00",
+                minimumRate.calculateInterest(),
+                "negative 20 percent should be accepted");
         assertBigDecimalEquals("0.00", zeroRate.calculateInterest(),
                 "zero rate should be accepted");
         assertBigDecimalEquals("200.00", maximumRate.calculateInterest(),
@@ -76,21 +83,23 @@ public class FixedDepositTestEngineerSuite {
                                 amountInput,
                                 "Deposit amount: ",
                                 "Deposit amount",
+                                BigDecimal.ZERO,
                                 false,
                                 null);
 
                 Scanner rateInput =
-                        new Scanner("-1\n1000\n3.75\n");
+                        new Scanner("-20.01\n1000\n-1.50\n");
                 values[1] =
                         FixedDepositManagement.readValidatedDecimal(
                                 rateInput,
                                 "Annual rate: ",
                                 "Annual rate",
+                                FixedDeposit.MIN_ANNUAL_INTEREST_RATE,
                                 true,
                                 FixedDeposit.MAX_ANNUAL_INTEREST_RATE);
 
-                Scanner nameInput =
-                        new Scanner("   \n  Alice Tan  \n");
+                Scanner nameInput = new Scanner(
+                        "123\nJohn3\n  Anne-Marie O'Connor  \n");
                 names[0] =
                         FixedDepositManagement.readCustomerName(nameInput);
             }
@@ -98,17 +107,37 @@ public class FixedDepositTestEngineerSuite {
 
         assertBigDecimalEquals("1500.25", values[0],
                 "first valid positive amount should be returned");
-        assertBigDecimalEquals("3.75", values[1],
-                "first rate inside 0 to 20 percent should be returned");
-        assertEquals("Alice Tan", names[0],
-                "blank name should be retried and valid name trimmed");
+        assertBigDecimalEquals("-1.50", values[1],
+                "first rate inside -20 to 20 percent should be returned");
+        assertEquals("Anne-Marie O'Connor", names[0],
+                "invalid names should be retried and valid name trimmed");
+    }
+
+    private static void testCustomerNameValidation() {
+        assertTrue(FixedDeposit.isValidCustomerName("Alice Tan"),
+                "name with spaces should be accepted");
+        assertTrue(FixedDeposit.isValidCustomerName(
+                        "Anne-Marie O'Connor"),
+                "hyphen and apostrophe should be accepted");
+        assertTrue(FixedDeposit.isValidCustomerName("J. R. Smith"),
+                "English initials should be accepted");
+        assertTrue(FixedDeposit.isValidCustomerName("José Álvarez"),
+                "accented letters should be accepted");
+        assertTrue(FixedDeposit.isValidCustomerName("李明"),
+                "Unicode letters should be accepted");
+        assertFalse(FixedDeposit.isValidCustomerName("123"),
+                "numeric name should be rejected");
+        assertFalse(FixedDeposit.isValidCustomerName("John3"),
+                "name containing a digit should be rejected");
+        assertFalse(FixedDeposit.isValidCustomerName("Alice@Bank"),
+                "name containing an unsupported symbol should be rejected");
     }
 
     private static void testDomainExceptions() {
         assertThrows(new Runnable() {
             @Override
             public void run() {
-                createDeposit("T004", "Negative Amount",
+                createDeposit("T005", "Negative Amount",
                         "-1", "3", "1");
             }
         }, "negative deposit should throw InvalidDepositException");
@@ -116,15 +145,15 @@ public class FixedDepositTestEngineerSuite {
         assertThrows(new Runnable() {
             @Override
             public void run() {
-                createDeposit("T005", "Negative Rate",
-                        "1000", "-0.01", "1");
+                createDeposit("T006", "Below Minimum Rate",
+                        "1000", "-20.01", "1");
             }
-        }, "negative rate should throw InvalidDepositException");
+        }, "rate below -20 percent should throw InvalidDepositException");
 
         assertThrows(new Runnable() {
             @Override
             public void run() {
-                createDeposit("T006", "Excessive Rate",
+                createDeposit("T007", "Excessive Rate",
                         "1000", "20.01", "1");
             }
         }, "rate above 20 percent should throw InvalidDepositException");
@@ -132,10 +161,18 @@ public class FixedDepositTestEngineerSuite {
         assertThrows(new Runnable() {
             @Override
             public void run() {
-                createDeposit("T007", "   ",
+                createDeposit("T008", "   ",
                         "1000", "3", "1");
             }
         }, "blank customer name should throw InvalidDepositException");
+
+        assertThrows(new Runnable() {
+            @Override
+            public void run() {
+                createDeposit("T009", "123",
+                        "1000", "3", "1");
+            }
+        }, "numeric customer name should throw InvalidDepositException");
     }
 
     private static void testReplacementPolicy() {
@@ -151,7 +188,7 @@ public class FixedDepositTestEngineerSuite {
                 };
 
         FixedDeposit deposit = new FixedDeposit(
-                "T008",
+                "T010",
                 "Policy Test",
                 new BigDecimal("1000"),
                 new BigDecimal("3"),
@@ -170,7 +207,7 @@ public class FixedDepositTestEngineerSuite {
                 "Alexandria Catherine Tan With An Extremely Long Name";
         FixedDeposit[] deposits = {
                 createDeposit(
-                        "T009",
+                        "T011",
                         longName,
                         "123456789012345.67",
                         "0",
@@ -186,7 +223,7 @@ public class FixedDepositTestEngineerSuite {
 
         assertContains(output, longName,
                 "report should preserve the complete customer name");
-        assertContains(output, "RM 123,456,789,012,345.67",
+        assertContains(output, "RMB 123,456,789,012,345.67",
                 "report should format a very large amount safely");
         assertContains(output, "SUMMARY / 汇总",
                 "report should include a clear summary section");
@@ -250,6 +287,18 @@ public class FixedDepositTestEngineerSuite {
         if (!expected.equals(actual)) {
             throw new AssertionError(message + ". Expected <"
                     + expected + "> but was <" + actual + ">.");
+        }
+    }
+
+    private static void assertTrue(boolean condition, String message) {
+        if (!condition) {
+            throw new AssertionError(message + ". Expected <true>.");
+        }
+    }
+
+    private static void assertFalse(boolean condition, String message) {
+        if (condition) {
+            throw new AssertionError(message + ". Expected <false>.");
         }
     }
 

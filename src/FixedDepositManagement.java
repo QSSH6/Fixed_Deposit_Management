@@ -44,7 +44,8 @@ public class FixedDepositManagement {
         System.out.println("Simple interest formula / 简单利息公式:");
         System.out.println(
                 "Interest = Deposit Amount x (Annual Rate / 100) x Term");
-        System.out.println("Allowed annual rate / 合理年利率范围: 0% - 20%");
+        System.out.println(
+                "Allowed annual rate / 合理年利率范围: -20% to 20%");
         System.out.println();
     }
 
@@ -62,8 +63,9 @@ public class FixedDepositManagement {
             String customerName = readCustomerName(scanner);
             BigDecimal depositAmount = readValidatedDecimal(
                     scanner,
-                    "Deposit amount / 定期存款金额 (RM): ",
+                    "Deposit amount / 定期存款金额 (RMB): ",
                     "Deposit amount / 存款金额",
+                    BigDecimal.ZERO,
                     false,
                     null
             );
@@ -71,6 +73,7 @@ public class FixedDepositManagement {
                     scanner,
                     "Annual interest rate / 年利率 (%): ",
                     "Annual interest rate / 年利率",
+                    FixedDeposit.MIN_ANNUAL_INTEREST_RATE,
                     true,
                     FixedDeposit.MAX_ANNUAL_INTEREST_RATE
             );
@@ -78,6 +81,7 @@ public class FixedDepositManagement {
                     scanner,
                     "Term / 存款期限 (years): ",
                     "Term / 存款期限",
+                    BigDecimal.ZERO,
                     false,
                     null
             );
@@ -110,9 +114,12 @@ public class FixedDepositManagement {
             String name = scanner.nextLine();
 
             try {
-                if (name.trim().length() == 0) {
+                if (!FixedDeposit.isValidCustomerName(name)) {
                     throw new InvalidDepositException(
-                            "Name cannot be empty / 客户姓名不能为空。");
+                            "Invalid name. Use letters, spaces, hyphens, "
+                                    + "apostrophes or periods only / "
+                                    + "姓名只能包含字母、空格、连字符、"
+                                    + "撇号或缩写点。");
                 }
                 return name.trim();
             } catch (InvalidDepositException exception) {
@@ -123,7 +130,8 @@ public class FixedDepositManagement {
 
     public static BigDecimal readValidatedDecimal(
             Scanner scanner, String prompt, String fieldName,
-            boolean allowZero, BigDecimal maximumValue) {
+            BigDecimal minimumValue, boolean minimumInclusive,
+            BigDecimal maximumValue) {
         while (true) {
             System.out.print(prompt);
             String input = scanner.nextLine().trim();
@@ -135,16 +143,20 @@ public class FixedDepositManagement {
                 }
                 BigDecimal number = new BigDecimal(input);
 
-                if (allowZero
-                        && number.compareTo(BigDecimal.ZERO) < 0) {
+                if (minimumValue != null
+                        && (number.compareTo(minimumValue) < 0
+                        || (!minimumInclusive
+                        && number.compareTo(minimumValue) == 0))) {
+                    String minimumText =
+                            minimumValue.stripTrailingZeros()
+                                    .toPlainString();
                     throw new InvalidDepositException(
-                            fieldName + " cannot be negative / 不能为负数。");
-                }
-                if (!allowZero
-                        && number.compareTo(BigDecimal.ZERO) <= 0) {
-                    throw new InvalidDepositException(
-                            fieldName + " must be greater than 0 / "
-                                    + "必须大于 0。");
+                            fieldName
+                                    + (minimumInclusive
+                                    ? " cannot be below "
+                                    : " must be greater than ")
+                                    + minimumText
+                                    + " / 低于允许的最小值。");
                 }
                 if (maximumValue != null
                         && number.compareTo(maximumValue) > 0) {
@@ -186,7 +198,7 @@ public class FixedDepositManagement {
                     + deposit.getCustomerId());
             System.out.println("Customer / 客户姓名: "
                     + deposit.getCustomerName());
-            System.out.println("Deposit / 定期存款金额: RM "
+            System.out.println("Deposit / 定期存款金额: RMB "
                     + formatMoney(deposit.getDepositAmount()));
             System.out.println("Annual Rate / 年利率: "
                     + formatPlainNumber(
@@ -194,9 +206,9 @@ public class FixedDepositManagement {
             System.out.println("Term / 存款期限: "
                     + formatPlainNumber(deposit.getTermInYears())
                     + " year(s)");
-            System.out.println("Interest / 利息: RM "
+            System.out.println("Interest / 利息: RMB "
                     + formatMoney(interest));
-            System.out.println("Maturity / 到期金额: RM "
+            System.out.println("Maturity / 到期金额: RMB "
                     + formatMoney(maturityAmount));
             System.out.println(REPORT_SEPARATOR);
 
@@ -208,11 +220,11 @@ public class FixedDepositManagement {
         }
 
         System.out.println("SUMMARY / 汇总");
-        System.out.println("Total Deposit / 总存款: RM "
+        System.out.println("Total Deposit / 总存款: RMB "
                 + formatMoney(totalDeposit));
-        System.out.println("Total Interest / 总利息: RM "
+        System.out.println("Total Interest / 总利息: RMB "
                 + formatMoney(totalInterest));
-        System.out.println("Total Maturity / 总到期金额: RM "
+        System.out.println("Total Maturity / 总到期金额: RMB "
                 + formatMoney(totalMaturityAmount));
         System.out.println(REPORT_SEPARATOR);
     }
