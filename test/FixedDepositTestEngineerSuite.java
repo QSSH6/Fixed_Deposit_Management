@@ -27,6 +27,10 @@ public class FixedDepositTestEngineerSuite {
                 FixedDepositTestEngineerSuite::testDomainExceptions);
         runTest("interface: supports a replacement interest policy",
                 FixedDepositTestEngineerSuite::testReplacementPolicy);
+        runTest("interface: calculates annual compound interest",
+                FixedDepositTestEngineerSuite::testCompoundInterestPolicy);
+        runTest("boundary case: handles compound policy edge cases",
+                FixedDepositTestEngineerSuite::testCompoundInterestBoundaries);
         runTest("report: supports long names and very large amounts",
                 FixedDepositTestEngineerSuite::testStableReportFormat);
 
@@ -200,6 +204,57 @@ public class FixedDepositTestEngineerSuite {
         assertBigDecimalEquals("1042.00",
                 deposit.calculateMaturityAmount(),
                 "maturity should include replacement-policy interest");
+    }
+
+    private static void testCompoundInterestPolicy() {
+        FixedDeposit deposit = new FixedDeposit(
+                "T012",
+                "Compound Customer",
+                new BigDecimal("10000"),
+                new BigDecimal("3.5"),
+                new BigDecimal("2"),
+                new CompoundInterestCalculator());
+
+        assertBigDecimalEquals("712.25", deposit.calculateInterest(),
+                "compound interest should be P x (1 + r)^t - P");
+        assertBigDecimalEquals("10712.25",
+                deposit.calculateMaturityAmount(),
+                "compound maturity amount should include compound interest");
+    }
+
+    private static void testCompoundInterestBoundaries() {
+        InterestCalculator compoundPolicy =
+                new CompoundInterestCalculator();
+        FixedDeposit zeroRate = new FixedDeposit(
+                "T013",
+                "Zero Compound",
+                new BigDecimal("1000"),
+                BigDecimal.ZERO,
+                new BigDecimal("3"),
+                compoundPolicy);
+        FixedDeposit negativeRate = new FixedDeposit(
+                "T014",
+                "Negative Compound",
+                new BigDecimal("1000"),
+                new BigDecimal("-10"),
+                new BigDecimal("2"),
+                compoundPolicy);
+        FixedDeposit fractionalTerm = new FixedDeposit(
+                "T015",
+                "Fractional Compound",
+                new BigDecimal("10000"),
+                new BigDecimal("3.5"),
+                new BigDecimal("0.5"),
+                compoundPolicy);
+
+        assertBigDecimalEquals("0.00", zeroRate.calculateInterest(),
+                "zero compound rate should produce zero interest");
+        assertBigDecimalEquals("-190.00",
+                negativeRate.calculateInterest(),
+                "negative compound rate should reduce maturity");
+        assertBigDecimalEquals("173.49",
+                fractionalTerm.calculateInterest(),
+                "fractional term should use the compound formula");
     }
 
     private static void testStableReportFormat() {

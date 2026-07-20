@@ -77,6 +77,7 @@
 ```text
 src/InterestCalculator.java               利息规则接口
 src/SimpleInterestCalculator.java         简单利息实现
+src/CompoundInterestCalculator.java       按年复利实现
 src/InvalidDepositException.java          业务数据异常
 src/FixedDeposit.java                     客户定期存款资料
 src/FixedDepositManagement.java           输入、异常处理和报告输出
@@ -105,3 +106,18 @@ java -cp out FixedDepositTestEngineerSuite
 ```
 
 只有全部测试通过后，系统才符合本次部署条件。
+
+## 可复用测试 Prompt
+
+仓库提供了
+[`generate-fixed-deposit-tests`](.github/prompts/generate-fixed-deposit-tests.prompt.md)
+prompt file，用于检查测试覆盖、补充测试并运行完整测试套件。
+
+在 Copilot Chat 中输入：
+
+```text
+/generate-fixed-deposit-tests focus=compound-interest boundaries
+```
+
+Lab 02 的模糊/精确提示词对比和调用结果见
+[`docs/lab-02-writing-and-reusing-prompts.md`](docs/lab-02-writing-and-reusing-prompts.md)。

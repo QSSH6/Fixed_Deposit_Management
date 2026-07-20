@@ -6,15 +6,12 @@ import java.math.RoundingMode;
  * Calculates interest using annual compound interest.
  *
  * Formula:
- * interest = principal × (1 + annualRate / 100) ^ years - principal
+ * interest = principal x (1 + annualRate / 100) ^ years - principal
  */
 public class CompoundInterestCalculator implements InterestCalculator {
-
     private static final BigDecimal ONE_HUNDRED = new BigDecimal("100");
-
-    /**
-     * Keep sufficient precision during intermediate calculations.
-     */
+    private static final BigDecimal NEGATIVE_ONE_HUNDRED =
+            new BigDecimal("-100");
     private static final MathContext MATH_CONTEXT =
             new MathContext(16, RoundingMode.HALF_UP);
 
@@ -22,22 +19,32 @@ public class CompoundInterestCalculator implements InterestCalculator {
     public BigDecimal calculateInterest(BigDecimal depositAmount,
                                         BigDecimal annualInterestRate,
                                         BigDecimal termInYears) {
-        validateParameters(depositAmount, annualInterestRate, termInYears);
+        validateParameters(
+                depositAmount, annualInterestRate, termInYears);
 
-        int years = termInYears.intValueExact();
-
-        BigDecimal rate = annualInterestRate.divide(
-                ONE_HUNDRED,
-                MATH_CONTEXT
+        BigDecimal annualGrowthFactor = BigDecimal.ONE.add(
+                annualInterestRate.divide(ONE_HUNDRED, MATH_CONTEXT)
         );
+        BigDecimal maturityAmount;
 
-        BigDecimal compoundFactor = BigDecimal.ONE
-                .add(rate)
-                .pow(years, MATH_CONTEXT);
+        if (termInYears.stripTrailingZeros().scale() <= 0) {
+            int years = termInYears.intValueExact();
+            maturityAmount = depositAmount.multiply(
+                    annualGrowthFactor.pow(years, MATH_CONTEXT),
+                    MATH_CONTEXT
+            );
+        } else {
+            double growth = Math.pow(
+                    annualGrowthFactor.doubleValue(),
+                    termInYears.doubleValue()
+            );
+            maturityAmount = depositAmount.multiply(
+                    BigDecimal.valueOf(growth),
+                    MATH_CONTEXT
+            );
+        }
 
-        return depositAmount
-                .multiply(compoundFactor, MATH_CONTEXT)
-                .subtract(depositAmount)
+        return maturityAmount.subtract(depositAmount)
                 .setScale(2, RoundingMode.HALF_UP);
     }
 
@@ -47,34 +54,21 @@ public class CompoundInterestCalculator implements InterestCalculator {
         if (depositAmount == null
                 || annualInterestRate == null
                 || termInYears == null) {
-            throw new IllegalArgumentException("Parameters must not be null.");
+            throw new IllegalArgumentException(
+                    "Parameters must not be null.");
         }
-
         if (depositAmount.signum() < 0) {
             throw new IllegalArgumentException(
-                    "Deposit amount must not be negative."
-            );
+                    "Deposit amount must not be negative.");
         }
-
-        if (annualInterestRate.signum() < 0) {
+        if (annualInterestRate.compareTo(
+                NEGATIVE_ONE_HUNDRED) <= 0) {
             throw new IllegalArgumentException(
-                    "Annual interest rate must not be negative."
-            );
+                    "Annual interest rate must be greater than -100%.");
         }
-
         if (termInYears.signum() < 0) {
             throw new IllegalArgumentException(
-                    "Term in years must not be negative."
-            );
-        }
-
-        try {
-            termInYears.intValueExact();
-        } catch (ArithmeticException exception) {
-            throw new IllegalArgumentException(
-                    "Annual compounding requires a whole-number term in years.",
-                    exception
-            );
+                    "Term in years must not be negative.");
         }
     }
 }
