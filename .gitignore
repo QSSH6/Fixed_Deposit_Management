@@ -2,3 +2,12 @@ out/
 *.class
 tmp/
 .DS_Store
+
+### IntelliJ IDEA ###
+.idea/modules.xml
+.idea/jarRepositories.xml
+.idea/compiler.xml
+.idea/libraries/
+*.iws
+*.iml
+*.ipr
