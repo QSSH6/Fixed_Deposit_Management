@@ -6,49 +6,69 @@ tools: ['codebase', 'search', 'editFiles', 'runCommands']
 argument-hint: 'focus=<feature, risk, or class to test>'
 ---
 
-## 1. Role
+## 1. Task
 
-Act as a senior Java QA engineer reviewing a banking application. Prioritize
-financial correctness, deterministic tests, boundary behaviour, and readable
-failure messages.
+Inspect the production classes in [src](../../src), the existing
+[test suite](../../test/FixedDepositTestEngineerSuite.java), the project
+[rules](../../README.md), and the [sample input](../../sample-input.txt).
 
-## 2. Task
+Identify missing automated-test coverage for
+`${input:focus:the highest-risk untested behavior}`. Add the smallest useful
+set of tests to the existing suite, execute the complete suite, and report the
+verified result. Do not only suggest tests: implement and run them.
 
-Inspect the current implementation and existing tests. Add the smallest useful
-set of automated tests for `${input:focus:the highest-risk untested behavior}`.
-Run the full test suite after editing and report the result.
+## 2. Constraints
 
-## 3. Context
+- Use Java 17 and the repository's default package.
+- Do not add Maven, Gradle, JUnit, external libraries, network calls, or APIs.
+- Modify test code only. Do not change production behaviour in `src`.
+- Extend `test/FixedDepositTestEngineerSuite.java`; do not create another test
+  framework or duplicate an existing test.
+- Preserve the project's `BigDecimal`, RMB, customer-name, and annual-rate
+  rules. Valid annual rates are `-20%` through `20%`, inclusive.
+- Cover the relevant normal, boundary, invalid-input, and exception paths.
+- Compare `BigDecimal` values through the existing
+  `assertBigDecimalEquals` helper, which uses `compareTo`.
+- Follow the existing coding style: four-space indentation, descriptive
+  `test...` method names, and deterministic Arrange-Act-Assert test logic.
+- Keep the complete test run below five seconds on the local Java 17 runtime.
 
-- Production code: [src](../../src)
-- Existing test suite:
-  [FixedDepositTestEngineerSuite.java](../../test/FixedDepositTestEngineerSuite.java)
-- Project rules and commands: [README.md](../../README.md)
-- Sample console input: [sample-input.txt](../../sample-input.txt)
-- The project uses Java 17, the default package, `BigDecimal`, RMB, and a
-  zero-dependency test runner.
-- Valid annual rates are from `-20%` through `20%`, inclusive.
-- The system supports replaceable simple-interest and compound-interest
-  policies through `InterestCalculator`.
+## 3. Expected Output
 
-## 4. Constraints and output
+1. Update only `test/FixedDepositTestEngineerSuite.java`.
+2. Register each new case with:
 
-1. Preserve production behaviour and do not add Maven, Gradle, JUnit, or other
-   dependencies.
-2. Extend the existing test suite instead of creating a second test framework.
-3. Cover relevant normal, boundary, invalid-input, and exception cases without
-   duplicating tests that already exist.
-4. Compare `BigDecimal` values with `compareTo`, not `double` tolerances.
-5. Keep tests deterministic and use clear Arrange-Act-Assert logic.
-6. Compile and run with:
-
-   ```bash
-   javac -Xlint:all -d out src/*.java test/*.java
-   java -cp out FixedDepositTestEngineerSuite
+   ```java
+   runTest("descriptive test name",
+           FixedDepositTestEngineerSuite::testMethodName);
    ```
 
-7. Finish with a concise summary containing:
-   - files inspected;
-   - tests added and why;
-   - compile/test result;
-   - any remaining untested risk.
+3. Implement each test with this signature and return type:
+
+   ```java
+   private static void testMethodName()
+   ```
+
+4. Reuse the suite's existing assertion and output-capture helpers.
+5. Return a concise Markdown summary with exactly these headings:
+   - `Files inspected`
+   - `Tests added`
+   - `Verification result`
+   - `Remaining risk`
+
+## 4. Verification
+
+Run these commands from the repository root:
+
+```bash
+javac -Xlint:all -d out src/*.java test/*.java
+java -cp out FixedDepositTestEngineerSuite
+```
+
+The task is complete only when all acceptance criteria pass:
+
+- compilation exits successfully with no warnings;
+- every existing and newly added test reports `[PASS]`;
+- the final summary reports `0 failed`;
+- `git diff -- src` is empty, confirming no production code changed;
+- no dependency or build-configuration file was added.

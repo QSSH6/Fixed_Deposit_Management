@@ -28,14 +28,16 @@ The reusable prompt is stored at
 
 Its four parts are:
 
-1. **Role** - senior Java QA engineer for a banking application.
-2. **Task** - inspect existing coverage, add only the smallest useful tests for
-   a supplied focus, and run the complete suite.
-3. **Context** - exact source, test, README, sample-input, Java, money, rate,
-   and interest-policy information.
-4. **Constraints and output** - zero dependencies, existing runner, required
-   test categories, `BigDecimal` comparison rules, commands, and response
-   format.
+1. **Task** - uses specific action verbs: inspect, identify, add, execute, and
+   report.
+2. **Constraints** - defines Java version, framework restrictions, five-second
+   performance limit, coding style, financial rules, and the production-code
+   boundary.
+3. **Expected Output** - specifies the only editable file, test registration
+   format, method signature, `void` return type, and final Markdown headings.
+4. **Verification** - specifies compile/test commands and measurable acceptance
+   criteria: no warnings, all tests passing, `0 failed`, no source changes, and
+   no new dependencies.
 
 ## Invocation
 
@@ -65,12 +67,10 @@ without changing production code or adding dependencies.
 
 | Criterion | Vague prompt | Precise reusable prompt |
 |---|---|---|
-| Repository awareness | No project files named | Exact source, tests, README, and sample input |
-| Test framework | Assumed JUnit | Reused the zero-dependency suite |
-| Coverage | Duplicated a normal case | Added missing compound-interest boundaries |
-| Financial rules | Not specified | BigDecimal, RMB, and rate limits specified |
-| Verification | No command | Compiles with warnings enabled and runs all tests |
-| Output consistency | Open-ended | Required summary and remaining-risk section |
+| Task | Vague action with no scope | Uses specific action verbs and a supplied test focus |
+| Constraints | No language or framework limits | Java 17, zero dependencies, coding style, financial rules, and time limit |
+| Expected output | No file or format specified | Exact file, registration form, method signature, return type, and Markdown headings |
+| Verification | No command or acceptance criteria | Compile/test commands, no warnings, all pass, no production diff |
 
 ## Review of the invoked output
 
